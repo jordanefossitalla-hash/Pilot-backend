@@ -16,6 +16,7 @@ async function registerUseCase(dependencies, input) {
     firstName: input.firstName,
     lastName: input.lastName,
     email: input.email,
+    phone: input.phone,
     passwordHash
   });
 

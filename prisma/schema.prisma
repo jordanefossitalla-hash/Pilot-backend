@@ -13,14 +13,107 @@ enum UserRole {
   EMPLOYEE
 }
 
+enum ThirdPartyType {
+  CUSTOMER
+  SUPPLIER
+  BOTH
+}
+
+enum LedgerDirection {
+  DEBIT
+  CREDIT
+}
+
+enum ThirdPartyLedgerEntryType {
+  OPENING_BALANCE
+  PAYMENT_IN
+  PAYMENT_OUT
+  PURCHASE_RECEIPT
+  MANUAL_ADJUSTMENT
+}
+
 model User {
   id           String   @id @default(cuid())
   firstName    String
   lastName     String
   email        String   @unique
+  phone        String?
   passwordHash String
   role         UserRole @default(ADMIN)
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model ThirdParty {
+  id            String                 @id @default(cuid())
+  name          String
+  type          ThirdPartyType         @default(CUSTOMER)
+  phone         String?
+  email         String?
+  address       String?
+  isActive      Boolean                @default(true)
+  ledgerEntries ThirdPartyLedgerEntry[]
+  stockEntries  StockEntry[]
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+}
+
+model ThirdPartyLedgerEntry {
+  id           String                    @id @default(cuid())
+  thirdPartyId String
+  entryType    ThirdPartyLedgerEntryType
+  direction    LedgerDirection
+  amount       Decimal                   @db.Decimal(18, 2)
+  reference    String?
+  description  String?
+  stockEntryId String?                   @unique
+  thirdParty   ThirdParty                @relation(fields: [thirdPartyId], references: [id], onDelete: Cascade)
+  stockEntry   StockEntry?               @relation(fields: [stockEntryId], references: [id], onDelete: SetNull)
+  createdAt    DateTime                  @default(now())
+
+  @@index([thirdPartyId, createdAt])
+}
+
+model Product {
+  id            String           @id @default(cuid())
+  name          String
+  sku           String?          @unique
+  unit          String           @default("UNIT")
+  stockQuantity Decimal          @default(0) @db.Decimal(18, 3)
+  isActive      Boolean          @default(true)
+  stockItems    StockEntryItem[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+}
+
+model StockEntry {
+  id           String                 @id @default(cuid())
+  supplierId   String
+  reference    String?
+  entryDate    DateTime               @default(now())
+  notes        String?
+  totalAmount  Decimal                @db.Decimal(18, 2)
+  supplier     ThirdParty             @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  items        StockEntryItem[]
+  ledgerEntry  ThirdPartyLedgerEntry?
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  @@index([supplierId, entryDate])
+}
+
+model StockEntryItem {
+  id           String     @id @default(cuid())
+  stockEntryId String
+  productId    String
+  quantity     Decimal    @db.Decimal(18, 3)
+  unitPrice    Decimal    @db.Decimal(18, 2)
+  lineTotal    Decimal    @db.Decimal(18, 2)
+  stockEntry   StockEntry @relation(fields: [stockEntryId], references: [id], onDelete: Cascade)
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Restrict)
+  createdAt    DateTime   @default(now())
+
+  @@index([stockEntryId])
+  @@index([productId])
 }

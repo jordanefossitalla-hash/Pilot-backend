@@ -12,6 +12,7 @@ function validateRegisterInput(payload) {
   const firstName = normalizeString(payload.firstName);
   const lastName = normalizeString(payload.lastName);
   const email = normalizeString(payload.email).toLowerCase();
+  const phone = normalizeString(payload.phone);
   const password = typeof payload.password === 'string' ? payload.password : '';
 
   if (!firstName || !lastName || !email || !password) {
@@ -30,6 +31,7 @@ function validateRegisterInput(payload) {
     firstName,
     lastName,
     email,
+    phone: phone || null,
     password
   };
 }
@@ -58,6 +60,7 @@ function serializeAuthUser(user) {
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
+    phone: user.phone,
     role: user.role,
     isActive: user.isActive,
     createdAt: user.createdAt
